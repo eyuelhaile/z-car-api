@@ -18,6 +18,7 @@ import {
   Flag,
   Scale,
   Eye,
+  Calendar,
   Clock,
   CheckCircle2,
   Loader2,
@@ -42,6 +43,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -85,7 +88,6 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ slug:
   const [messageText, setMessageText] = useState('');
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   
-  const { isAuthenticated } = useAuthStore();
   const { isAuthenticated, user } = useAuthStore();
   const { isFavorite, addFavorite, removeFavorite } = useFavoritesStore();
   const toggleFavoriteMutation = useToggleFavorite();

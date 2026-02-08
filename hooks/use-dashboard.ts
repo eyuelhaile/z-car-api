@@ -211,7 +211,10 @@ export function useAppointments(status?: string, role?: 'buyer' | 'seller') {
       if (Array.isArray(response)) return response;
       if (response?.data && Array.isArray(response.data)) return response.data;
       // Fallback: sometimes API nests under 'appointments' or returns null
-      if (response?.appointments && Array.isArray(response.appointments)) return response.appointments;
+      const responseAny = response as any;
+      if (responseAny?.appointments && Array.isArray(responseAny.appointments)) {
+        return responseAny.appointments;
+      }
       return [];
     },
     staleTime: 1000 * 60 * 2, // 2 minutes

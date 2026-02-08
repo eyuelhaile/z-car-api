@@ -42,10 +42,10 @@ export default function AdminDashboardPage() {
 
   const isLoading = isLoadingAnalytics || isLoadingListings || isLoadingReports;
 
-  // Pending listings response: { data: { data: Listing[], pagination: {...} } } (nested structure)
-  const pendingListings = pendingListingsData?.data?.data || [];
-  // Reports response: { data: { data: Report[], pagination: {...}, summary: {...} } }
-  const reports = reportsData?.data?.data || [];
+  // Pending listings response: { data: Listing[], pagination: {...} }
+  const pendingListings = pendingListingsData?.data || [];
+  // Reports response: { data: Report[], pagination: {...}, summary: {...} }
+  const reports = reportsData?.data || [];
 
   // Extract stats from analytics
   const stats = analytics ? [

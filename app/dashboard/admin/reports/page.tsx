@@ -72,10 +72,10 @@ export default function AdminReportsPage() {
   const [resolveAction, setResolveAction] = useState('no_action');
   const [resolveNotes, setResolveNotes] = useState('');
 
-  // API returns: { data: { data: Report[], pagination: {...}, summary: {...} } }
-  const reports = reportsData?.data?.data || [];
-  const pagination = reportsData?.data?.pagination;
-  const summary = reportsData?.data?.summary;
+  // API returns: { data: Report[], pagination: {...}, summary: {...} }
+  const reports = reportsData?.data || [];
+  const pagination = reportsData?.pagination;
+  const summary = reportsData?.summary;
 
   const handleResolveClick = (report: any) => {
     setSelectedReport(report);

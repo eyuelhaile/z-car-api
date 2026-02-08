@@ -141,11 +141,15 @@ export type VehicleCondition = 'new' | 'used' | 'certified';
 
 export interface VehicleAttributes {
   make: string;
-  model: string;
+  makeSlug?: string;
+  model?: string;
   year: number;
   bodyType?: string;
+  bodyTypeSlug?: string;
   fuelType: FuelType;
+  fuelTypeSlug?: string;
   transmission: TransmissionType;
+  transmissionSlug?: string;
   mileage: number;
   engineSize?: number;
   horsepower?: number;
@@ -352,7 +356,7 @@ export interface CreateVehicleListingRequest {
   images?: string[];
   vehicleAttributes: {
     make: string;  // slug
-    model: string;
+    model?: string;
     year: number;
     bodyType: string;  // slug
     fuelType: string;  // slug

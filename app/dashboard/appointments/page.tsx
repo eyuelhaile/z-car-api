@@ -62,7 +62,9 @@ export default function AppointmentsPage() {
   const now = new Date();
   const today = startOfDay(now);
 
-  const filteredAppointments = (appointments || []).filter((apt) => {
+  const safeAppointments: Appointment[] = appointments ?? [];
+
+  const filteredAppointments = safeAppointments.filter((apt: Appointment) => {
     const aptDate = new Date(apt.scheduledAt);
     switch (activeTab) {
       case 'upcoming':
@@ -145,8 +147,8 @@ export default function AppointmentsPage() {
           <TabsTrigger value="upcoming" className="gap-2">
             Upcoming
             <Badge variant="secondary">
-              {(appointments || []).filter(
-                (apt) =>
+              {safeAppointments.filter(
+                (apt: Appointment) =>
                   isAfter(new Date(apt.scheduledAt), now) &&
                   apt.status !== 'cancelled' &&
                   apt.status !== 'completed'

@@ -390,7 +390,7 @@ export function useCreateBoost() {
       listingId: string;
       type: 'featured' | 'top_search' | 'homepage' | 'category_top' | 'urgent' | 'highlight';
       durationDays: number;
-      paymentMethod: 'wallet' | 'card' | 'bank';
+      paymentMethod: 'subscription' | 'wallet' | 'telebirr' | 'mpesa';
       autoRenew?: boolean;
     }) => {
       const response = await api.createBoost(data);

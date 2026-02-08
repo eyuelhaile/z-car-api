@@ -869,8 +869,17 @@ class ApiClient {
     return response.data;
   }
 
-  async getDashboardAnalytics(): Promise<ApiResponse<DashboardAnalytics>> {
-    const response = await this.client.get('/analytics/dashboard');
+  async getDashboardAnalytics(period?: string): Promise<ApiResponse<DashboardAnalytics>> {
+    const response = await this.client.get('/analytics/dashboard', {
+      params: period ? { period } : undefined,
+    });
+    return response.data;
+  }
+
+  async getAnalyticsOverview(period?: string): Promise<ApiResponse<AnalyticsOverview>> {
+    const response = await this.client.get('/analytics/dashboard', {
+      params: period ? { period } : undefined,
+    });
     return response.data;
   }
 
