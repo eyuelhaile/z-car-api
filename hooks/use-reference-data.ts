@@ -45,6 +45,7 @@ export const referenceKeys = {
   vehicleFormData: () => [...referenceKeys.all, 'vehicle', 'form-data'] as const,
   propertyFormData: () => [...referenceKeys.all, 'property', 'form-data'] as const,
   makes: (popular?: boolean) => [...referenceKeys.all, 'makes', { popular }] as const,
+  makesUsed: () => [...referenceKeys.all, 'makes', 'used'] as const,
   models: (makeId: string) => [...referenceKeys.all, 'models', makeId] as const,
   bodyTypes: () => [...referenceKeys.all, 'bodyTypes'] as const,
   fuelTypes: () => [...referenceKeys.all, 'fuelTypes'] as const,
@@ -172,6 +173,17 @@ export function useVehicleMakes(popular?: boolean) {
       return normalizeItems(response.data || []);
     },
     staleTime: 1000 * 60 * 60,
+  });
+}
+
+export function useVehicleMakesUsed() {
+  return useQuery({
+    queryKey: referenceKeys.makesUsed(),
+    queryFn: async () => {
+      const response = await api.getVehicleMakesUsed();
+      return normalizeItems(response.data || []);
+    },
+    staleTime: 1000 * 60 * 15,
   });
 }
 

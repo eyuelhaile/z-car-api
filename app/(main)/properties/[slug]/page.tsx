@@ -83,7 +83,7 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ slug:
   const router = useRouter();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isContactDialogOpen, setIsContactDialogOpen] = useState(false);
-  const [showPhone, setShowPhone] = useState(false);
+  const [showPhone] = useState(true);
   const [phoneCopied, setPhoneCopied] = useState(false);
   const [messageText, setMessageText] = useState('');
   const [isSendingMessage, setIsSendingMessage] = useState(false);
@@ -218,20 +218,6 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ slug:
     } finally {
       setIsSendingMessage(false);
     }
-  };
-
-  const handleShowPhone = () => {
-    if (!isAuthenticated) {
-      toast.error('Please sign in', {
-        description: 'You need to be logged in to see contact details',
-        action: {
-          label: 'Sign in',
-          onClick: () => router.push('/auth/login'),
-        },
-      });
-      return;
-    }
-    setShowPhone(true);
   };
 
   const canRequestAppointment = () => {
@@ -838,12 +824,7 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ slug:
                     </DialogContent>
                   </Dialog>
 
-                  {!showPhone ? (
-                    <Button variant="outline" className="w-full gap-2" onClick={handleShowPhone}>
-                      <Phone className="h-5 w-5" />
-                      Show Phone Number
-                    </Button>
-                  ) : propertyData.user?.phone ? (
+                  {showPhone && propertyData.user?.phone ? (
                     <div className="flex gap-2">
                       <Button 
                         variant="outline" 
@@ -865,12 +846,12 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ slug:
                         )}
                       </Button>
                     </div>
-                  ) : (
+                  ) : showPhone ? (
                     <Button variant="outline" className="w-full gap-2" disabled>
                       <Phone className="h-5 w-5" />
                       No phone available
                     </Button>
-                  )}
+                  ) : null}
                 </div>
 
                 <Separator className="my-6" />

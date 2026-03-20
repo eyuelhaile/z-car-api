@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Car,
@@ -55,7 +55,8 @@ import {
 } from '@/components/ui/popover';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { useCreateListing, useUpdateListing, useUploadImages, usePublishListing } from '@/hooks/use-listings';
+import { useCreateListing, useUpdateListing, useUploadImages, usePublishListing, useInitializeChapaPayment } from '@/hooks/use-listings';
+import { PaymentRequiredDialog } from '@/components/payments/payment-required-dialog';
 import {
   useVehicleFormData,
   usePropertyFormData,
@@ -66,13 +67,14 @@ import { getFieldErrors } from '@/lib/error-utils';
 import { getImageUrl } from '@/lib/utils';
 import axios from 'axios';
 import { useEffect } from 'react';
+import api from '@/lib/api';
 
 interface CreateListingPageProps {
   initialData?: Listing;
   listingId?: string;
 }
 
-export default function CreateListingPage({ initialData, listingId }: CreateListingPageProps = {}) {
+function CreateListingPageContent({ initialData, listingId }: CreateListingPageProps = {}) {
   const router = useRouter();
   const isEditMode = !!initialData && !!listingId;
   
@@ -123,11 +125,14 @@ export default function CreateListingPage({ initialData, listingId }: CreateList
   // Create/Update listing mutations
   const createListingMutation = useCreateListing();
   const updateListingMutation = useUpdateListing();
+  const initializeChapaPaymentMutation = useInitializeChapaPayment();
   const uploadImagesMutation = useUploadImages();
   const publishListingMutation = usePublishListing();
   
   // Track newly created listing ID for publish option
   const [newlyCreatedListingId, setNewlyCreatedListingId] = useState<string | null>(null);
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [pendingPaymentListingId, setPendingPaymentListingId] = useState<string | null>(null);
 
   // Fetch form data from API
   const { data: vehicleFormData, isLoading: isLoadingVehicleForm } = useVehicleFormData();
@@ -234,6 +239,51 @@ export default function CreateListingPage({ initialData, listingId }: CreateList
   
   // Field validation errors from API
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  // Note: Payment verification is handled by Chapa callback webhook
+  // Users are redirected to /payments/success page after payment
+
+  // Handle payment button click
+  const handlePayWithChapa = async () => {
+    if (!pendingPaymentListingId) return;
+
+    try {
+      // Store listingId in sessionStorage so success page can access it
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('chapa_listing_id', pendingPaymentListingId);
+      }
+      
+      // Use the payment success page as return URL
+      const returnUrl = `${window.location.origin}/payments/success?listingId=${pendingPaymentListingId}`;
+      const result = await initializeChapaPaymentMutation.mutateAsync({
+        listingId: pendingPaymentListingId,
+        amount: 10,
+        returnUrl,
+      });
+
+      // Store tx_ref in sessionStorage (backup, though callback handles verification)
+      if (result.tx_ref && typeof window !== 'undefined') {
+        sessionStorage.setItem(`chapa_tx_ref_${pendingPaymentListingId}`, result.tx_ref);
+        sessionStorage.setItem(`chapa_listing_for_tx_${result.tx_ref}`, pendingPaymentListingId);
+      }
+
+      console.log('🔍 [Payment Init] Redirecting to Chapa:', {
+        listingId: pendingPaymentListingId,
+        txRef: result.tx_ref,
+        returnUrl,
+      });
+
+      // Redirect to Chapa checkout
+      // Chapa will redirect back to returnUrl after payment
+      // The callback URL will handle verification and update listing status
+      if (result.checkout_url) {
+        window.location.href = result.checkout_url;
+      }
+    } catch (error) {
+      // Error is already handled by the mutation
+      console.error('Failed to initialize payment:', error);
+    }
+  };
 
   // Update form when initialData changes (e.g., when data loads asynchronously)
   useEffect(() => {
@@ -548,20 +598,38 @@ export default function CreateListingPage({ initialData, listingId }: CreateList
       
       if (isEditMode && listingId) {
         // Update existing listing
-        await updateListingMutation.mutateAsync({
+        const result = await updateListingMutation.mutateAsync({
           id: listingId,
           data: listingData as Partial<Listing>,
         });
-        toast.success('Listing updated successfully!');
+        
+        // Check if payment is required (quota exceeded during update)
+        if ((result as any)?.paymentRequired || (result as any)?.metadata?.paymentRequired) {
+          // Store listing ID and show payment dialog
+          setPendingPaymentListingId(listingId);
+          setPaymentDialogOpen(true);
+        } else {
+          toast.success('Listing updated successfully!', {
+            description: result.status === 'pending' ? 'Your listing is pending review.' : 'Listing updated.',
+          });
+        }
       } else {
         // Create new listing
         const result = await createListingMutation.mutateAsync(listingData);
-        toast.success('Listing created successfully!', {
-          description: 'Your listing is pending. Publish it to make it active.',
-        });
-        // Store the created listing ID to show publish option
-        setNewlyCreatedListingId(result.id);
-        // Don't redirect immediately - show publish option
+        
+        // Check if payment is required (quota exceeded)
+        if ((result as any)?.paymentRequired || (result as any)?.metadata?.paymentRequired) {
+          // Store listing ID and show payment dialog
+          setPendingPaymentListingId(result.id);
+          setPaymentDialogOpen(true);
+        } else {
+          toast.success('Listing created successfully!', {
+            description: 'Your listing is pending. Publish it to make it active.',
+          });
+          // Store the created listing ID to show publish option
+          setNewlyCreatedListingId(result.id);
+          // Don't redirect immediately - show publish option
+        }
       }
     } catch (error) {
       // Extract field-specific errors from listing creation
@@ -1845,6 +1913,38 @@ export default function CreateListingPage({ initialData, listingId }: CreateList
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Payment Required Dialog */}
+      {pendingPaymentListingId && (
+        <PaymentRequiredDialog
+          open={paymentDialogOpen}
+          onOpenChange={setPaymentDialogOpen}
+          listingId={pendingPaymentListingId}
+          amount={10}
+          onPay={handlePayWithChapa}
+          onCancel={() => {
+            setPaymentDialogOpen(false);
+            // Optionally redirect to listings page or keep dialog open
+          }}
+        />
+      )}
     </div>
+  );
+}
+
+// Wrap in Suspense for useSearchParams
+export default function CreateListingPage(props: CreateListingPageProps) {
+  return (
+    <Suspense fallback={
+      <div className="p-4 sm:p-6 lg:p-8">
+        <div className="max-w-5xl mx-auto">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        </div>
+      </div>
+    }>
+      <CreateListingPageContent {...props} />
+    </Suspense>
   );
 }

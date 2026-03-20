@@ -10,7 +10,7 @@ import {
   Loader2,
   Calendar,
   AlertCircle,
-  RefreshCw,
+  ChevronDown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -35,10 +35,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
-import { useSubscriptionPlans, useMySubscription, useSubscribe, useSoretiPaymentServices, createSoretiOrder } from '@/hooks/use-dashboard';
+import {
+  useSubscriptionPlans,
+  useMySubscription,
+  useSubscribe,
+  useSoretiPaymentServices,
+  useInitializeChapaSubscriptionPayment,
+  createSoretiOrder,
+} from '@/hooks/use-dashboard';
 import { useAuth } from '@/hooks/use-auth';
 import { format, differenceInDays } from 'date-fns';
+import { toast } from 'sonner';
 
 const planIcons: Record<string, React.ReactNode> = {
   basic: <Zap className="h-6 w-6" />,
@@ -57,6 +71,9 @@ export default function SubscriptionPage() {
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
   // Holds selected external payment service ID from Soreti
   const [paymentMethod, setPaymentMethod] = useState('');
+  /** Primary: Chapa (same as listing payment). Secondary: Telebirr / Soreti. */
+  const [paymentChannel, setPaymentChannel] = useState<'chapa' | 'telebirr'>('chapa');
+  const [otherPaymentOpen, setOtherPaymentOpen] = useState(false);
   const [autoRenew, setAutoRenew] = useState(true);
   const [isUpgradeDialogOpen, setIsUpgradeDialogOpen] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
@@ -64,6 +81,7 @@ export default function SubscriptionPage() {
   const { data: plans, isLoading: isLoadingPlans } = useSubscriptionPlans();
   const { data: subscription, isLoading: isLoadingSub } = useMySubscription();
   const subscribeMutation = useSubscribe();
+  const chapaSubscriptionMutation = useInitializeChapaSubscriptionPayment();
   const { data: paymentServices, isLoading: isLoadingPaymentServices } = useSoretiPaymentServices();
   const { user } = useAuth();
 
@@ -103,14 +121,49 @@ export default function SubscriptionPage() {
       return;
     }
 
-    // Paid plans use the external Soreti payment gateway
-    if (!user || !user.id || !user.phone) {
-      // User must be logged in with phone to pay
+    if (!user?.id) {
+      toast.error('Please sign in to subscribe');
+      return;
+    }
+
+    // Primary: Chapa (creates Transaction on server, same flow as listing over-quota)
+    if (paymentChannel === 'chapa') {
+      if (!user.email) {
+        toast.error('Your account needs an email address to pay with Chapa.');
+        return;
+      }
+      setIsProcessingPayment(true);
+      try {
+        const returnUrl = `${window.location.origin}/dashboard/subscription/success`;
+        const result = await chapaSubscriptionMutation.mutateAsync({
+          planId: plan.id,
+          billingCycle: billingPeriod,
+          amount: price,
+          returnUrl,
+        });
+        if (result?.tx_ref && typeof window !== 'undefined') {
+          sessionStorage.setItem('chapa_sub_tx_ref', result.tx_ref);
+        }
+        if (result?.checkout_url) {
+          window.location.href = result.checkout_url;
+        } else {
+          setIsProcessingPayment(false);
+          toast.error('No checkout URL returned. Please try again.');
+        }
+      } catch {
+        setIsProcessingPayment(false);
+      }
+      return;
+    }
+
+    // Other option: Telebirr / Soreti (existing Cheche flow — unchanged)
+    if (!user.phone) {
+      toast.error('Add a phone number to your profile to use Telebirr / mobile money.');
       return;
     }
 
     if (!paymentMethod) {
-      // No payment service selected
+      toast.error('Select a payment option under “Other payment options”.');
       return;
     }
 
@@ -125,20 +178,16 @@ export default function SubscriptionPage() {
         userId: user.id,
         phoneNumber,
         paymentServiceId: paymentMethod,
-        transactionId: plan.id, // Use plan id as transaction_id
+        transactionId: plan.id,
       });
 
       if (url) {
-        // Navigate to payment URL automatically
         window.location.href = url;
       } else {
         setIsProcessingPayment(false);
-        // Handle error - URL not received
       }
-    } catch (error) {
+    } catch {
       setIsProcessingPayment(false);
-      // Handle error - you can add toast here if needed
-      // console.error('Failed to initiate subscription payment', error);
     }
   };
 
@@ -394,7 +443,17 @@ export default function SubscriptionPage() {
                       Current Plan
                     </Button>
                   ) : (
-                    <Dialog open={isUpgradeDialogOpen && selectedPlan === plan.plan} onOpenChange={setIsUpgradeDialogOpen}>
+                    <Dialog
+                      open={isUpgradeDialogOpen && selectedPlan === plan.plan}
+                      onOpenChange={(open) => {
+                        setIsUpgradeDialogOpen(open);
+                        if (!open) {
+                          setPaymentChannel('chapa');
+                          setPaymentMethod('');
+                          setOtherPaymentOpen(false);
+                        }
+                      }}
+                    >
                       <DialogTrigger asChild>
                         <Button
                           className={cn(
@@ -403,7 +462,10 @@ export default function SubscriptionPage() {
                               ? 'bg-amber-500 hover:bg-amber-600'
                               : ''
                           )}
-                          onClick={() => setSelectedPlan(plan.plan)}
+                          onClick={() => {
+                            setSelectedPlan(plan.plan);
+                            setPaymentChannel('chapa');
+                          }}
                         >
                           {subscription?.plan === 'basic' && plan.plan !== 'basic'
                             ? 'Upgrade'
@@ -426,21 +488,104 @@ export default function SubscriptionPage() {
                         <div className="space-y-4 py-4">
                           {price > 0 && (
                             <>
-                              <div className="space-y-2">
-                                <Label>Payment Method</Label>
-                                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder={isLoadingPaymentServices ? 'Loading...' : 'Select payment method'} />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {(paymentServices || []).map((service) => (
-                                      <SelectItem key={service.id} value={service.id}>
-                                        {service.name || service.vendor_type || 'Payment Option'}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
+                              <RadioGroup
+                                value={paymentChannel}
+                                onValueChange={(v) => {
+                                  const next = v as 'chapa' | 'telebirr';
+                                  setPaymentChannel(next);
+                                  if (next === 'telebirr') {
+                                    setOtherPaymentOpen(true);
+                                  }
+                                }}
+                                className="space-y-3"
+                              >
+                                <div
+                                  className={cn(
+                                    'flex items-start gap-3 rounded-lg border p-4 cursor-pointer transition-colors',
+                                    paymentChannel === 'chapa'
+                                      ? 'border-amber-500 bg-amber-50/60 dark:bg-amber-950/20'
+                                      : 'border-border'
+                                  )}
+                                  onClick={() => setPaymentChannel('chapa')}
+                                >
+                                  <RadioGroupItem value="chapa" id={`chapa-${plan.plan}`} className="mt-1" />
+                                  <div className="flex-1">
+                                    <Label htmlFor={`chapa-${plan.plan}`} className="cursor-pointer font-semibold">
+                                      Pay with Chapa
+                                    </Label>
+                                    <p className="text-sm text-muted-foreground mt-1">
+                                      Recommended — secure checkout (cards &amp; mobile wallets). Same flow as listing
+                                      payments.
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <Collapsible open={otherPaymentOpen} onOpenChange={setOtherPaymentOpen}>
+                                  <CollapsibleTrigger asChild>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      className="w-full justify-between px-0 text-muted-foreground hover:text-foreground"
+                                    >
+                                      <span>Other payment options</span>
+                                      <ChevronDown
+                                        className={cn(
+                                          'h-4 w-4 shrink-0 transition-transform',
+                                          otherPaymentOpen && 'rotate-180'
+                                        )}
+                                      />
+                                    </Button>
+                                  </CollapsibleTrigger>
+                                  <CollapsibleContent className="space-y-3 pt-2">
+                                    <div
+                                      className={cn(
+                                        'flex items-start gap-3 rounded-lg border p-4 cursor-pointer',
+                                        paymentChannel === 'telebirr'
+                                          ? 'border-muted-foreground/40 bg-muted/30'
+                                          : 'border-border'
+                                      )}
+                                      onClick={() => {
+                                        setPaymentChannel('telebirr');
+                                        setOtherPaymentOpen(true);
+                                      }}
+                                    >
+                                      <RadioGroupItem value="telebirr" id={`telebirr-${plan.plan}`} className="mt-1" />
+                                      <div className="flex-1 space-y-2">
+                                        <Label htmlFor={`telebirr-${plan.plan}`} className="cursor-pointer font-medium">
+                                          Telebirr / mobile money (Soreti)
+                                        </Label>
+                                        <p className="text-sm text-muted-foreground">
+                                          Pay through your existing Telebirr / Cheche mobile flow (unchanged).
+                                        </p>
+                                        {paymentChannel === 'telebirr' && (
+                                          <div className="space-y-2 pt-2">
+                                            <Label className="text-xs uppercase text-muted-foreground">
+                                              Service
+                                            </Label>
+                                            <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                                              <SelectTrigger>
+                                                <SelectValue
+                                                  placeholder={
+                                                    isLoadingPaymentServices ? 'Loading...' : 'Select payment method'
+                                                  }
+                                                />
+                                              </SelectTrigger>
+                                              <SelectContent>
+                                                {(paymentServices || []).map((service) => (
+                                                  <SelectItem key={service.id} value={service.id}>
+                                                    {service.name || service.vendor_type || 'Payment Option'}
+                                                  </SelectItem>
+                                                ))}
+                                              </SelectContent>
+                                            </Select>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </CollapsibleContent>
+                                </Collapsible>
+                              </RadioGroup>
+
                               <div className="flex items-center justify-between">
                                 <Label htmlFor="auto-renew-dialog">Auto-renew subscription</Label>
                                 <Switch
@@ -458,16 +603,28 @@ export default function SubscriptionPage() {
                           </Button>
                           <Button
                             onClick={handleSubscribe}
-                            disabled={subscribeMutation.isPending || isProcessingPayment}
+                            disabled={
+                              subscribeMutation.isPending ||
+                              isProcessingPayment ||
+                              chapaSubscriptionMutation.isPending ||
+                              (price > 0 &&
+                                paymentChannel === 'telebirr' &&
+                                (!paymentMethod || isLoadingPaymentServices)) ||
+                              (price > 0 && paymentChannel === 'chapa' && !user?.email)
+                            }
                             className="bg-amber-500 hover:bg-amber-600"
                           >
-                            {(subscribeMutation.isPending || isProcessingPayment) ? (
+                            {subscribeMutation.isPending ||
+                            isProcessingPayment ||
+                            chapaSubscriptionMutation.isPending ? (
                               <>
                                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
                                 Processing...
                               </>
                             ) : price === 0 ? (
                               'Activate'
+                            ) : paymentChannel === 'chapa' ? (
+                              'Pay with Chapa'
                             ) : (
                               'Pay & Subscribe'
                             )}

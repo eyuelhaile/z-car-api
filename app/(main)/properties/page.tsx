@@ -614,11 +614,11 @@ function PropertiesPageContent() {
                     )}
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-[300px] overflow-y-auto">
-                  <SheetHeader>
+                <SheetContent side="left" className="w-[300px] overflow-y-auto px-4">
+                  <SheetHeader className="px-0">
                     <SheetTitle>Filters</SheetTitle>
                   </SheetHeader>
-                  <div className="mt-6">
+                  <div className="mt-6 pb-6">
                     <FilterContent />
                   </div>
                 </SheetContent>
@@ -773,7 +773,7 @@ function PropertiesPageContent() {
         <div className="flex gap-8">
           {/* Desktop Sidebar Filters */}
           <aside className="hidden lg:block w-64 shrink-0">
-            <div className="sticky top-24 bg-background rounded-xl border p-6 max-h-[calc(100vh-120px)] overflow-y-auto">
+            <div className="sticky top-24 bg-background rounded-xl border p-6 max-h-[calc(100vh-7rem)] overflow-y-auto overscroll-contain scrollbar-thin">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="font-semibold">Filters</h3>
                 {activeFiltersCount > 0 && (

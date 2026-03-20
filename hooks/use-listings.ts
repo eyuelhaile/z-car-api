@@ -118,9 +118,15 @@ export function useCreateListing() {
   return useMutation({
     mutationFn: async (data: CreateListingRequest | Partial<Listing>) => {
       const response = await api.createListing(data);
-      return response.data;
+      // Check if payment is required (quota exceeded)
+      const listing = response.data as any;
+      if (listing?.metadata?.paymentRequired) {
+        // Return listing with paymentRequired flag
+        return { ...listing, paymentRequired: true };
+      }
+      return listing;
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       // Invalidate all listing queries to refresh data
       queryClient.invalidateQueries({ queryKey: listingKeys.all });
       // Specifically invalidate my listings to refresh dashboard
@@ -129,12 +135,32 @@ export function useCreateListing() {
       queryClient.invalidateQueries({ queryKey: listingKeys.lists() });
       // Invalidate latest listings (though it won't show until published)
       queryClient.invalidateQueries({ queryKey: ['listings', 'latest'] });
-      toast.success('Listing created successfully!', {
-        description: 'Your listing has been submitted for review.',
-      });
+      
+      // Only show success toast if payment is not required
+      if (!data?.paymentRequired) {
+        toast.success('Listing created successfully!', {
+          description: 'Your listing has been submitted for review.',
+        });
+      }
+      // If paymentRequired, the UI will show the payment dialog instead
     },
     onError: (error) => {
       toast.error('Failed to create listing', {
+        description: getApiErrorMessage(error, 'Please try again.'),
+      });
+    },
+  });
+}
+
+// Hook to initialize Chapa payment for listing
+export function useInitializeChapaPayment() {
+  return useMutation({
+    mutationFn: async ({ listingId, amount = 10, returnUrl }: { listingId: string; amount?: number; returnUrl?: string }) => {
+      const response = await api.initializeChapaPayment(listingId, amount, returnUrl);
+      return response.data;
+    },
+    onError: (error) => {
+      toast.error('Failed to initialize payment', {
         description: getApiErrorMessage(error, 'Please try again.'),
       });
     },
@@ -148,13 +174,22 @@ export function useUpdateListing() {
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Listing> }) => {
       const response = await api.updateListing(id, data);
+      // Check for paymentRequired flag in the response data
+      if ((response.data as any)?.paymentRequired) {
+        return { ...response.data, paymentRequired: true };
+      }
       return response.data;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (data: any, variables) => {
       queryClient.invalidateQueries({ queryKey: listingKeys.detail(variables.id) });
       queryClient.invalidateQueries({ queryKey: listingKeys.lists() });
       queryClient.invalidateQueries({ queryKey: listingKeys.my() });
-      toast.success('Listing updated successfully!');
+      
+      // Only show success toast if payment is not required
+      // The payment dialog will be shown by the component instead
+      if (!data?.paymentRequired) {
+        toast.success('Listing updated successfully!');
+      }
     },
     onError: (error) => {
       toast.error('Failed to update listing', {

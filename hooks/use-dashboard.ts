@@ -4,6 +4,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import api from '@/lib/api';
 import { useBadgeCountsStore } from '@/lib/store';
+import { toast } from 'sonner';
+import { getApiErrorMessage } from '@/lib/error-utils';
 import {
   Conversation,
   Message,
@@ -510,6 +512,31 @@ export function useSubscribe() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: dashboardKeys.mySubscription() });
+    },
+  });
+}
+
+/** Chapa subscription checkout (same provider as listing over-quota payment). */
+export function useInitializeChapaSubscriptionPayment() {
+  return useMutation({
+    mutationFn: async (payload: {
+      planId: string;
+      billingCycle: 'monthly' | 'yearly';
+      amount: number;
+      returnUrl?: string;
+    }) => {
+      const response = await api.initializeChapaSubscription(
+        payload.planId,
+        payload.billingCycle,
+        payload.amount,
+        payload.returnUrl
+      );
+      return response.data!;
+    },
+    onError: (error) => {
+      toast.error('Failed to start Chapa checkout', {
+        description: getApiErrorMessage(error, 'Please try again.'),
+      });
     },
   });
 }

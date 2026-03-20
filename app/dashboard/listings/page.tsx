@@ -322,10 +322,17 @@ export default function ListingsPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge className={getStatusColor(listing.status)} variant="secondary">
-                      {getStatusIcon(listing.status)}
-                      <span className="ml-1 capitalize">{listing.status}</span>
-                    </Badge>
+                    <div className="space-y-1">
+                      <Badge className={getStatusColor(listing.status)} variant="secondary">
+                        {getStatusIcon(listing.status)}
+                        <span className="ml-1 capitalize">{listing.status}</span>
+                      </Badge>
+                      {listing.status === 'rejected' && listing.rejectionReason && (
+                        <p className="text-xs text-red-600 max-w-[220px] break-words">
+                          Reason: {listing.rejectionReason}
+                        </p>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <p className="font-semibold text-amber-600">{formatPrice(listing.price)}</p>

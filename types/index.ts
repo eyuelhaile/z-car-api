@@ -112,6 +112,7 @@ export interface Listing {
   isProperty?: boolean;
   hasVehicleAttributes?: boolean;
   hasPropertyAttributes?: boolean;
+  rejectionReason?: string;
   createdAt: string;
   publishedAt?: string;
 }

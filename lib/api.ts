@@ -303,6 +303,11 @@ class ApiClient {
     return response.data;
   }
 
+  async getVehicleMakesUsed(): Promise<ApiResponse<VehicleMake[]>> {
+    const response = await this.client.get('/reference/vehicle/makes/used');
+    return response.data;
+  }
+
   async getVehicleModels(makeId: string): Promise<ApiResponse<VehicleModel[]>> {
     const response = await this.client.get(`/reference/vehicle/makes/${makeId}/models`);
     return response.data;
@@ -768,6 +773,48 @@ class ApiClient {
 
   async getPaymentHistory(): Promise<ApiResponse<Payment[]>> {
     const response = await this.client.get('/payments/history');
+    return response.data;
+  }
+
+  // Chapa Payment Endpoints
+  async initializeChapaPayment(listingId: string, amount: number = 10, returnUrl?: string): Promise<ApiResponse<{
+    checkout_url: string;
+    transactionId: string;
+    tx_ref: string;
+  }>> {
+    const response = await this.client.post('/payments/chapa/initialize', {
+      listingId,
+      amount,
+      ...(returnUrl && { returnUrl }),
+    });
+    return response.data;
+  }
+
+  /** Chapa checkout for subscription — creates a Transaction row on the server. */
+  async initializeChapaSubscription(
+    planId: string,
+    billingCycle: 'monthly' | 'yearly',
+    amount: number,
+    returnUrl?: string
+  ): Promise<ApiResponse<{
+    checkout_url: string;
+    transactionId: string;
+    tx_ref: string;
+  }>> {
+    const response = await this.client.post(
+      '/payments/chapa/subscription/initialize',
+      { planId, billingCycle, amount },
+      { params: returnUrl ? { returnUrl } : undefined }
+    );
+    return response.data;
+  }
+
+  async verifyChapaPayment(txRef: string): Promise<ApiResponse<{
+    verified: boolean;
+    listingId?: string;
+    transactionId?: string;
+  }>> {
+    const response = await this.client.get(`/payments/chapa/verify/${txRef}`);
     return response.data;
   }
 

@@ -142,7 +142,7 @@ export function Header() {
 
         {/* Desktop Actions */}
         <div className="hidden md:flex items-center gap-2">
-          <Link href="/search">
+          <Link href="/vehicles">
             <Button variant="ghost" size="icon" className="text-muted-foreground">
               <Search className="h-5 w-5" />
             </Button>
@@ -291,7 +291,7 @@ export function Header() {
                     </Link>
                   );
                 })}
-                <Link href="/search" onClick={() => setMobileMenuOpen(false)}>
+                <Link href="/vehicles" onClick={() => setMobileMenuOpen(false)}>
                   <Button variant="ghost" className="w-full justify-start gap-3">
                     <Search className="h-5 w-5" />
                     Search

@@ -12,6 +12,8 @@ import {
   Loader2,
   Bookmark,
   BookmarkCheck,
+  Check,
+  ChevronsUpDown,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,11 +49,12 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Slider } from '@/components/ui/slider';
 import { Separator } from '@/components/ui/separator';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ListingCard } from '@/components/listings/listing-card';
 import { useListings } from '@/hooks/use-listings';
-import { useVehicleMakes, useBodyTypes, useFuelTypes, useTransmissions } from '@/hooks/use-reference-data';
+import { useVehicleMakesUsed, useBodyTypes, useFuelTypes, useTransmissions } from '@/hooks/use-reference-data';
 import { useCreateSavedSearch } from '@/hooks/use-dashboard';
 import { useAuthStore } from '@/lib/store';
 import { ListingFilters } from '@/types';
@@ -96,10 +99,9 @@ function VehiclesPageContent() {
   });
 
   // Price range state for slider
-  const [priceRange, setPriceRange] = useState([
-    filters.minPrice || 0,
-    filters.maxPrice || 15000000,
-  ]);
+  const [priceMinInput, setPriceMinInput] = useState(filters.minPrice ? String(filters.minPrice) : '');
+  const [priceMaxInput, setPriceMaxInput] = useState(filters.maxPrice ? String(filters.maxPrice) : '');
+  const [isMakesOpen, setIsMakesOpen] = useState(false);
 
   // Selected filter arrays for checkboxes
   const [selectedMakes, setSelectedMakes] = useState<string[]>(
@@ -126,7 +128,7 @@ function VehiclesPageContent() {
   ];
 
   // Fetch reference data from API
-  const { data: makesData, isLoading: loadingMakes } = useVehicleMakes();
+  const { data: makesData, isLoading: loadingMakes } = useVehicleMakesUsed();
   const { data: bodyTypesData, isLoading: loadingBodyTypes } = useBodyTypes();
   const { data: fuelTypesData, isLoading: loadingFuelTypes } = useFuelTypes();
   const { data: transmissionsData, isLoading: loadingTransmissions } = useTransmissions();
@@ -140,9 +142,9 @@ function VehiclesPageContent() {
     fuelType: selectedFuelTypes.length > 0 ? selectedFuelTypes.join(',') : undefined,
     transmission: selectedTransmissions.length > 0 ? selectedTransmissions.join(',') : undefined,
     sellerRole: selectedSellerRole ? (selectedSellerRole as 'private' | 'broker' | 'dealership') : undefined,
-    minPrice: priceRange[0] > 0 ? priceRange[0] : undefined,
-    maxPrice: priceRange[1] < 15000000 ? priceRange[1] : undefined,
-  }), [filters, searchQuery, selectedMakes, selectedBodyTypes, selectedFuelTypes, selectedTransmissions, selectedSellerRole, priceRange]);
+    minPrice: filters.minPrice,
+    maxPrice: filters.maxPrice,
+  }), [filters, searchQuery, selectedMakes, selectedBodyTypes, selectedFuelTypes, selectedTransmissions, selectedSellerRole]);
 
   // Fetch listings from API
   const { data: listingsData, isLoading, error, isFetching } = useListings(apiFilters);
@@ -159,13 +161,13 @@ function VehiclesPageContent() {
     if (selectedFuelTypes.length > 0) params.set('fuelType', selectedFuelTypes.join(','));
     if (selectedTransmissions.length > 0) params.set('transmission', selectedTransmissions.join(','));
     if (selectedSellerRole) params.set('sellerRole', selectedSellerRole);
-    if (priceRange[0] > 0) params.set('minPrice', String(priceRange[0]));
-    if (priceRange[1] < 15000000) params.set('maxPrice', String(priceRange[1]));
+    if (filters.minPrice) params.set('minPrice', String(filters.minPrice));
+    if (filters.maxPrice) params.set('maxPrice', String(filters.maxPrice));
     if (searchQuery) params.set('q', searchQuery);
     
     const queryString = params.toString();
     router.replace(`/vehicles${queryString ? `?${queryString}` : ''}`, { scroll: false });
-  }, [filters, selectedMakes, selectedBodyTypes, selectedFuelTypes, selectedTransmissions, selectedSellerRole, priceRange, searchQuery, router]);
+  }, [filters, selectedMakes, selectedBodyTypes, selectedFuelTypes, selectedTransmissions, selectedSellerRole, searchQuery, router]);
 
   const activeFiltersCount = 
     selectedMakes.length + 
@@ -173,7 +175,7 @@ function VehiclesPageContent() {
     selectedFuelTypes.length + 
     selectedTransmissions.length +
     (selectedSellerRole ? 1 : 0) +
-    (priceRange[0] > 0 || priceRange[1] < 15000000 ? 1 : 0);
+    (filters.minPrice || filters.maxPrice ? 1 : 0);
 
   const clearFilters = () => {
     setSelectedMakes([]);
@@ -181,16 +183,31 @@ function VehiclesPageContent() {
     setSelectedFuelTypes([]);
     setSelectedTransmissions([]);
     setSelectedSellerRole('');
-    setPriceRange([0, 15000000]);
+    setPriceMinInput('');
+    setPriceMaxInput('');
     setSearchInput('');
     setSearchQuery('');
-    setFilters((prev) => ({ ...prev, page: 1 }));
+    setFilters((prev) => ({ ...prev, page: 1, minPrice: undefined, maxPrice: undefined }));
   };
 
   // Handle search
   const handleSearch = () => {
     setSearchQuery(searchInput);
     setFilters((prev) => ({ ...prev, page: 1 }));
+  };
+
+  const clearSearch = () => {
+    setSearchInput('');
+    setSearchQuery('');
+    setFilters((prev) => ({ ...prev, page: 1 }));
+  };
+
+  const applyPriceFilter = () => {
+    const parsedMin = priceMinInput.trim() ? Number(priceMinInput) : undefined;
+    const parsedMax = priceMaxInput.trim() ? Number(priceMaxInput) : undefined;
+    const minPrice = parsedMin !== undefined && Number.isFinite(parsedMin) && parsedMin >= 0 ? parsedMin : undefined;
+    const maxPrice = parsedMax !== undefined && Number.isFinite(parsedMax) && parsedMax >= 0 ? parsedMax : undefined;
+    setFilters((prev) => ({ ...prev, page: 1, minPrice, maxPrice }));
   };
 
   // Handle save search
@@ -225,8 +242,8 @@ function VehiclesPageContent() {
           fuelType: selectedFuelTypes.length > 0 ? selectedFuelTypes.join(',') : undefined,
           transmission: selectedTransmissions.length > 0 ? selectedTransmissions.join(',') : undefined,
           sellerRole: selectedSellerRole || undefined,
-          minPrice: priceRange[0] > 0 ? priceRange[0] : undefined,
-          maxPrice: priceRange[1] < 15000000 ? priceRange[1] : undefined,
+          minPrice: filters.minPrice,
+          maxPrice: filters.maxPrice,
         },
         notifyEnabled: true,
         notifyFrequency: 'instant' as const,
@@ -298,22 +315,34 @@ function VehiclesPageContent() {
   const listings = listingsData?.data || [];
   const pagination = listingsData?.pagination;
   const totalCount = pagination?.total || 0;
+  const selectedMakeLabels = selectedMakes
+    .map((slug) => makesData?.find((m) => m.slug === slug)?.name || slug)
+    .join(', ');
 
-  const FilterContent = () => (
+  const renderFilterContent = () => (
     <div className="space-y-6">
       {/* Price Range */}
       <div>
         <h4 className="font-medium mb-4">Price Range (ETB)</h4>
-        <Slider
-          value={priceRange}
-          onValueChange={setPriceRange}
-          max={15000000}
-          step={100000}
-          className="mb-4"
-        />
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>{formatPrice(priceRange[0])} ETB</span>
-          <span>{formatPrice(priceRange[1])} ETB</span>
+        <div className="space-y-3">
+          <Input
+            type="number"
+            min={0}
+            placeholder="Min price"
+            value={priceMinInput}
+            onChange={(e) => setPriceMinInput(e.target.value)}
+          />
+          <Input
+            type="number"
+            min={0}
+            placeholder="Max price"
+            value={priceMaxInput}
+            onChange={(e) => setPriceMaxInput(e.target.value)}
+          />
+          <Button variant="outline" className="w-full gap-2" onClick={applyPriceFilter}>
+            <Search className="h-4 w-4" />
+            Search price
+          </Button>
         </div>
       </div>
 
@@ -329,27 +358,45 @@ function VehiclesPageContent() {
             ))}
           </div>
         ) : (
-          <div className="space-y-2 max-h-48 overflow-y-auto">
-            {(makesData || []).map((make) => (
-              <label key={make.id} className="flex items-center gap-2 cursor-pointer">
-                <Checkbox
-                  checked={selectedMakes.includes(make.slug)}
-                  onCheckedChange={(checked) => {
-                    if (checked) {
-                      setSelectedMakes([...selectedMakes, make.slug]);
-                    } else {
-                      setSelectedMakes(selectedMakes.filter((m) => m !== make.slug));
-                    }
-                    setFilters((prev) => ({ ...prev, page: 1 }));
-                  }}
-                />
-                <span className="text-sm">{make.name}</span>
-                {make.isPopular && (
-                  <Badge variant="secondary" className="text-xs py-0 px-1">Popular</Badge>
-                )}
-              </label>
-            ))}
-          </div>
+          <Popover open={isMakesOpen} onOpenChange={setIsMakesOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" role="combobox" aria-expanded={isMakesOpen} className="w-full justify-between font-normal">
+                <span className="truncate">
+                  {selectedMakes.length > 0 ? selectedMakeLabels : 'Select makes'}
+                </span>
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+              <Command>
+                <CommandInput placeholder="Search makes..." />
+                <CommandList>
+                  <CommandEmpty>No makes found.</CommandEmpty>
+                  <CommandGroup className="max-h-64 overflow-y-auto">
+                    {(makesData || []).map((make) => (
+                      <CommandItem
+                        key={make.id}
+                        value={make.name}
+                        onSelect={() => {
+                          const exists = selectedMakes.includes(make.slug);
+                          if (exists) {
+                            setSelectedMakes(selectedMakes.filter((m) => m !== make.slug));
+                          } else {
+                            setSelectedMakes([...selectedMakes, make.slug]);
+                          }
+                          setFilters((prev) => ({ ...prev, page: 1 }));
+                          setIsMakesOpen(false);
+                        }}
+                      >
+                        <Check className={cn('mr-2 h-4 w-4', selectedMakes.includes(make.slug) ? 'opacity-100' : 'opacity-0')} />
+                        <span className="text-sm">{make.name}</span>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
         )}
       </div>
 
@@ -365,7 +412,7 @@ function VehiclesPageContent() {
             ))}
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
             {(bodyTypesData || []).map((type) => (
               <label key={type.id} className="flex items-center gap-2 cursor-pointer">
                 <Checkbox
@@ -523,8 +570,18 @@ function VehiclesPageContent() {
                       handleSearch();
                     }
                   }}
-                  className="pl-10 h-12"
+                  className="pl-10 pr-10 h-12"
                 />
+                {searchInput && (
+                  <button
+                    type="button"
+                    onClick={clearSearch}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label="Clear search"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
               </div>
               <Button 
                 onClick={handleSearch} 
@@ -556,12 +613,12 @@ function VehiclesPageContent() {
                     )}
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-[300px] overflow-y-auto">
-                  <SheetHeader>
+                <SheetContent side="left" className="w-[300px] overflow-y-auto px-4">
+                  <SheetHeader className="px-0">
                     <SheetTitle>Filters</SheetTitle>
                   </SheetHeader>
-                  <div className="mt-6">
-                    <FilterContent />
+                  <div className="mt-6 pb-6">
+                    {renderFilterContent()}
                   </div>
                 </SheetContent>
               </Sheet>
@@ -687,12 +744,16 @@ function VehiclesPageContent() {
                   />
                 </Badge>
               )}
-              {(priceRange[0] > 0 || priceRange[1] < 15000000) && (
+              {(filters.minPrice || filters.maxPrice) && (
                 <Badge variant="secondary" className="gap-1">
-                  {formatPrice(priceRange[0])} - {formatPrice(priceRange[1])} ETB
+                  {filters.minPrice ? formatPrice(filters.minPrice) : '0'} - {filters.maxPrice ? formatPrice(filters.maxPrice) : 'Any'} ETB
                   <X
                     className="h-3 w-3 cursor-pointer"
-                    onClick={() => setPriceRange([0, 15000000])}
+                    onClick={() => {
+                      setPriceMinInput('');
+                      setPriceMaxInput('');
+                      setFilters((prev) => ({ ...prev, page: 1, minPrice: undefined, maxPrice: undefined }));
+                    }}
                   />
                 </Badge>
               )}
@@ -709,14 +770,14 @@ function VehiclesPageContent() {
         <div className="flex gap-8">
           {/* Desktop Sidebar Filters */}
           <aside className="hidden lg:block w-64 shrink-0">
-            <div className="sticky top-24 bg-background rounded-xl border p-6">
+            <div className="sticky top-24 bg-background rounded-xl border p-6 max-h-[calc(100vh-7rem)] overflow-y-auto overscroll-contain scrollbar-thin">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="font-semibold">Filters</h3>
                 {activeFiltersCount > 0 && (
                   <Badge variant="secondary">{activeFiltersCount}</Badge>
                 )}
               </div>
-              <FilterContent />
+              {renderFilterContent()}
             </div>
           </aside>
 
@@ -857,14 +918,14 @@ function VehiclesPageContent() {
                 {selectedBodyTypes.map((t) => <Badge key={t} variant="outline">{t}</Badge>)}
                 {selectedFuelTypes.map((f) => <Badge key={f} variant="outline">{f}</Badge>)}
                 {selectedTransmissions.map((t) => <Badge key={t} variant="outline">{t}</Badge>)}
-                {(priceRange[0] > 0 || priceRange[1] < 15000000) && (
+                {(filters.minPrice || filters.maxPrice) && (
                   <Badge variant="outline">
-                    Price: {formatPrice(priceRange[0])} - {formatPrice(priceRange[1])}
+                    Price: {filters.minPrice ? formatPrice(filters.minPrice) : '0'} - {filters.maxPrice ? formatPrice(filters.maxPrice) : 'Any'}
                   </Badge>
                 )}
                 {!searchQuery && selectedMakes.length === 0 && selectedBodyTypes.length === 0 && 
                  selectedFuelTypes.length === 0 && selectedTransmissions.length === 0 && 
-                 priceRange[0] === 0 && priceRange[1] === 15000000 && (
+                 !filters.minPrice && !filters.maxPrice && (
                   <span>All vehicles</span>
                 )}
               </div>
