@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { CheckCircle2, Loader2, ArrowRight } from 'lucide-react';
@@ -10,7 +10,7 @@ import Link from 'next/link';
 import api from '@/lib/api';
 import { dashboardKeys } from '@/hooks/use-dashboard';
 
-export default function SubscriptionPaymentSuccessPage() {
+function SubscriptionPaymentSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
@@ -95,5 +95,27 @@ export default function SubscriptionPaymentSuccessPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function SubscriptionPaymentSuccessFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950 p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto mb-4" />
+          <CardTitle className="text-2xl">Confirming subscription…</CardTitle>
+          <CardDescription>Loading…</CardDescription>
+        </CardHeader>
+      </Card>
+    </div>
+  );
+}
+
+export default function SubscriptionPaymentSuccessPage() {
+  return (
+    <Suspense fallback={<SubscriptionPaymentSuccessFallback />}>
+      <SubscriptionPaymentSuccessContent />
+    </Suspense>
   );
 }
