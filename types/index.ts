@@ -115,6 +115,10 @@ export interface Listing {
   rejectionReason?: string;
   createdAt: string;
   publishedAt?: string;
+  metadata?: Record<string, unknown>;
+  /** Set by API from listing metadata — use for Chapa; do not hardcode client-side */
+  paymentRequired?: boolean;
+  paymentAmount?: number;
 }
 
 export interface ListingSummary {

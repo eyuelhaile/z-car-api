@@ -447,7 +447,19 @@ class ApiClient {
     return response.data;
   }
 
-  async createListing(data: CreateListingRequest | Partial<Listing>): Promise<ApiResponse<{ id: string; slug: string; status: string }>> {
+  async createListing(
+    data: CreateListingRequest | Partial<Listing>
+  ): Promise<
+    ApiResponse<
+      Listing & {
+        id: string;
+        slug: string;
+        status: string;
+        paymentRequired?: boolean;
+        paymentAmount?: number;
+      }
+    >
+  > {
     const response = await this.client.post('/listings', data);
     return response.data;
   }
@@ -777,7 +789,11 @@ class ApiClient {
   }
 
   // Chapa Payment Endpoints
-  async initializeChapaPayment(listingId: string, amount: number = 10, returnUrl?: string): Promise<ApiResponse<{
+  async initializeChapaPayment(
+    listingId: string,
+    amount: number,
+    returnUrl?: string
+  ): Promise<ApiResponse<{
     checkout_url: string;
     transactionId: string;
     tx_ref: string;

@@ -118,12 +118,7 @@ export function useCreateListing() {
   return useMutation({
     mutationFn: async (data: CreateListingRequest | Partial<Listing>) => {
       const response = await api.createListing(data);
-      // Check if payment is required (quota exceeded)
-      const listing = response.data as any;
-      if (listing?.metadata?.paymentRequired) {
-        // Return listing with paymentRequired flag
-        return { ...listing, paymentRequired: true };
-      }
+      const listing = response.data as Record<string, unknown>;
       return listing;
     },
     onSuccess: (data: any) => {
@@ -142,7 +137,6 @@ export function useCreateListing() {
           description: 'Your listing has been submitted for review.',
         });
       }
-      // If paymentRequired, the UI will show the payment dialog instead
     },
     onError: (error) => {
       toast.error('Failed to create listing', {
@@ -155,7 +149,15 @@ export function useCreateListing() {
 // Hook to initialize Chapa payment for listing
 export function useInitializeChapaPayment() {
   return useMutation({
-    mutationFn: async ({ listingId, amount = 10, returnUrl }: { listingId: string; amount?: number; returnUrl?: string }) => {
+    mutationFn: async ({
+      listingId,
+      amount,
+      returnUrl,
+    }: {
+      listingId: string;
+      amount: number;
+      returnUrl?: string;
+    }) => {
       const response = await api.initializeChapaPayment(listingId, amount, returnUrl);
       return response.data;
     },
@@ -174,10 +176,6 @@ export function useUpdateListing() {
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Listing> }) => {
       const response = await api.updateListing(id, data);
-      // Check for paymentRequired flag in the response data
-      if ((response.data as any)?.paymentRequired) {
-        return { ...response.data, paymentRequired: true };
-      }
       return response.data;
     },
     onSuccess: (data: any, variables) => {

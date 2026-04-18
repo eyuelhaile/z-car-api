@@ -133,6 +133,7 @@ function CreateListingPageContent({ initialData, listingId }: CreateListingPageP
   const [newlyCreatedListingId, setNewlyCreatedListingId] = useState<string | null>(null);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [pendingPaymentListingId, setPendingPaymentListingId] = useState<string | null>(null);
+  const [pendingPaymentAmountEtb, setPendingPaymentAmountEtb] = useState<number | null>(null);
 
   // Fetch form data from API
   const { data: vehicleFormData, isLoading: isLoadingVehicleForm } = useVehicleFormData();
@@ -255,9 +256,15 @@ function CreateListingPageContent({ initialData, listingId }: CreateListingPageP
       
       // Use the payment success page as return URL
       const returnUrl = `${window.location.origin}/payments/success?listingId=${pendingPaymentListingId}`;
+      if (pendingPaymentAmountEtb == null || !Number.isFinite(pendingPaymentAmountEtb)) {
+        toast.error('Missing payment amount', {
+          description: 'Please try creating the listing again.',
+        });
+        return;
+      }
       const result = await initializeChapaPaymentMutation.mutateAsync({
         listingId: pendingPaymentListingId,
-        amount: 10,
+        amount: pendingPaymentAmountEtb,
         returnUrl,
       });
 
@@ -605,7 +612,19 @@ function CreateListingPageContent({ initialData, listingId }: CreateListingPageP
         
         // Check if payment is required (quota exceeded during update)
         if ((result as any)?.paymentRequired || (result as any)?.metadata?.paymentRequired) {
-          // Store listing ID and show payment dialog
+          const amt =
+            typeof (result as any).paymentAmount === 'number'
+              ? (result as any).paymentAmount
+              : typeof (result as any)?.metadata?.paymentAmount === 'number'
+                ? (result as any).metadata.paymentAmount
+                : undefined;
+          if (amt == null || !Number.isFinite(Number(amt))) {
+            toast.error('Configuration error', {
+              description: 'Listing fee amount was not returned by the server.',
+            });
+            return;
+          }
+          setPendingPaymentAmountEtb(Number(amt));
           setPendingPaymentListingId(listingId);
           setPaymentDialogOpen(true);
         } else {
@@ -619,7 +638,19 @@ function CreateListingPageContent({ initialData, listingId }: CreateListingPageP
         
         // Check if payment is required (quota exceeded)
         if ((result as any)?.paymentRequired || (result as any)?.metadata?.paymentRequired) {
-          // Store listing ID and show payment dialog
+          const amt =
+            typeof (result as any).paymentAmount === 'number'
+              ? (result as any).paymentAmount
+              : typeof (result as any)?.metadata?.paymentAmount === 'number'
+                ? (result as any).metadata.paymentAmount
+                : undefined;
+          if (amt == null || !Number.isFinite(Number(amt))) {
+            toast.error('Configuration error', {
+              description: 'Listing fee amount was not returned by the server.',
+            });
+            return;
+          }
+          setPendingPaymentAmountEtb(Number(amt));
           setPendingPaymentListingId(result.id);
           setPaymentDialogOpen(true);
         } else {
@@ -1915,12 +1946,12 @@ function CreateListingPageContent({ initialData, listingId }: CreateListingPageP
       </div>
 
       {/* Payment Required Dialog */}
-      {pendingPaymentListingId && (
+      {pendingPaymentListingId && pendingPaymentAmountEtb != null && (
         <PaymentRequiredDialog
           open={paymentDialogOpen}
           onOpenChange={setPaymentDialogOpen}
           listingId={pendingPaymentListingId}
-          amount={10}
+          amount={pendingPaymentAmountEtb}
           onPay={handlePayWithChapa}
           onCancel={() => {
             setPaymentDialogOpen(false);
