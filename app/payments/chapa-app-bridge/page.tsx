@@ -2,18 +2,42 @@
 
 /**
  * Mobile Chapa flow only: Chapa return_url points here (https). This page immediately
- * redirects to the native app scheme so WebBrowser.openAuthSessionAsync can close and
- * return control to JS — the full Next.js /payments/success page must not be the Chapa return_url for the app.
+ * redirects to the in-app session return URL so WebBrowser.openAuthSessionAsync closes.
  *
- * Must match Expo `Linking.createURL('…/chapa-return')`: `zcar:/path` (one slash after the colon),
- * not `zcar://path` — the latter parses `path` as host and breaks Android auth-session prefix matching.
+ * The app passes `app_session_return` on the bridge URL — the exact string from
+ * `Linking.createURL('dashboard/payments/chapa-return')` (Expo Go: `exp://...`, dev client: `zcar:/...`).
+ * Without it, we would guess the scheme from env and Expo Go users get an app chooser for `zcar:`.
+ *
+ * Fallback: `NEXT_PUBLIC_EXPO_APP_SCHEME` + path (production builds without the param).
  */
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 
-function buildAppDeepLink(scheme: string, pathNoLeadingSlash: string, query: string) {
+function buildAppDeepLinkFallback(scheme: string, pathNoLeadingSlash: string, query: string) {
   const p = pathNoLeadingSlash.replace(/^\//, '');
   return `${scheme}:/${p}${query ? `?${query}` : ''}`;
+}
+
+/** Merge Chapa/query params onto the deep-link base from the app (must match openAuthSessionAsync). */
+function buildRedirectTarget(
+  searchParams: URLSearchParams,
+  fallbackScheme: string,
+  fallbackPath: string
+): string {
+  const appReturn = searchParams.get('app_session_return');
+  const passthrough = new URLSearchParams(searchParams.toString());
+  passthrough.delete('app_session_return');
+
+  const tail = passthrough.toString();
+
+  if (appReturn && appReturn.trim()) {
+    const base = appReturn.trim();
+    if (!tail) return base;
+    const join = base.includes('?') ? '&' : '?';
+    return `${base}${join}${tail}`;
+  }
+
+  return buildAppDeepLinkFallback(fallbackScheme, fallbackPath, tail);
 }
 
 function BridgeRedirect() {
@@ -25,7 +49,11 @@ function BridgeRedirect() {
     const path = (
       process.env.NEXT_PUBLIC_EXPO_CHAPA_RETURN_PATH || 'dashboard/payments/chapa-return'
     ).replace(/^\//, '');
-    return buildAppDeepLink(scheme, path, searchParams.toString());
+    return buildRedirectTarget(
+      new URLSearchParams(searchParams.toString()),
+      scheme,
+      path
+    );
   }, [searchParams]);
 
   useEffect(() => {
