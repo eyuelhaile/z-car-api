@@ -1,11 +1,6 @@
 'use client';
 
-/**
- * Web-only success UI after Chapa redirects here (return_url must be https).
- * If CHAPA_RETURN_URL uses your API host (e.g. testapi…/payments/success), that
- * response is served by the zcar API instead — deploy either this page on your
- * web domain or the API route, and keep env consistent.
- */
+/** Chapa `return_url` should point here (https), e.g. CHAPA_RETURN_URL on the API. */
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CheckCircle2, Loader2, ArrowRight } from 'lucide-react';
