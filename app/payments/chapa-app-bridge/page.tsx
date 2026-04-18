@@ -43,24 +43,35 @@ function buildRedirectTarget(
 function BridgeRedirect() {
   const searchParams = useSearchParams();
   const [showManual, setShowManual] = useState(false);
+  const embed = searchParams.get('embed') === '1';
 
   const target = useMemo(() => {
     const scheme = process.env.NEXT_PUBLIC_EXPO_APP_SCHEME || 'zcar';
     const path = (
       process.env.NEXT_PUBLIC_EXPO_CHAPA_RETURN_PATH || 'dashboard/payments/chapa-return'
     ).replace(/^\//, '');
-    return buildRedirectTarget(
-      new URLSearchParams(searchParams.toString()),
-      scheme,
-      path
-    );
+    const passthrough = new URLSearchParams(searchParams.toString());
+    passthrough.delete('embed');
+    return buildRedirectTarget(passthrough, scheme, path);
   }, [searchParams]);
 
   useEffect(() => {
+    if (embed) return;
     window.location.replace(target);
     const t = window.setTimeout(() => setShowManual(true), 2500);
     return () => window.clearTimeout(t);
-  }, [target]);
+  }, [target, embed]);
+
+  if (embed) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white p-6 gap-4">
+        <p className="text-gray-700 text-center text-base font-medium">Payment complete</p>
+        <p className="text-gray-500 text-center text-sm">
+          Returning you to the app…
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-white p-6 gap-4">
