@@ -1,4 +1,4 @@
-# v0 AI Prompt: ZCAR Marketplace React Native Mobile Application
+# v0 AI Prompt: EagleList React Native mobile application
 
 ## ⚠️⚠️⚠️ CRITICAL: THIS IS A NATIVE MOBILE APPLICATION - NOT A WEB APP ⚠️⚠️⚠️
 
@@ -16,7 +16,7 @@
 **If you create a web application, you have failed the task. This MUST be a React Native mobile application.**
 
 ## Project Overview
-Create a complete, professional **React Native mobile application** (NOT a web app) for **ZCAR Marketplace** - a dual-category platform for Vehicles and Properties in Ethiopia. This is a **native mobile app** that will be built with React Native and Expo, designed to run on iOS and Android devices. The app should mirror all web functionality with a beautiful, modern native mobile design using React Native components.
+Create a complete, professional **React Native mobile application** (NOT a web app) for **EagleList** — a dual-category platform for Vehicles and Properties in Ethiopia. This is a **native mobile app** that will be built with React Native and Expo, designed to run on iOS and Android devices. The app should mirror all web functionality with a beautiful, modern native mobile design using React Native components.
 
 ## Technical Requirements
 

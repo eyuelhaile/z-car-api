@@ -1,5 +1,5 @@
 // ============================================
-// ZCAR Marketplace Types
+// EagleList marketplace types
 // ============================================
 
 // User Types

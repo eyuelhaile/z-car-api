@@ -149,7 +149,7 @@ export default function VerifyOtpPage() {
         setAuth(response.data.user, response.data.token);
         
         toast.success('Phone verified!', {
-          description: 'Welcome to ZCAR Marketplace.',
+          description: 'Welcome to EagleList.',
         });
         
         // Redirect based on role

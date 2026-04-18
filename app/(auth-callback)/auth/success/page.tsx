@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useEffect, useState, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
@@ -77,8 +78,8 @@ function AuthSuccessContent() {
           setStatus('success');
           
           if (isNewUser) {
-            setMessage('Account created successfully! Welcome to ZCAR Marketplace.');
-            toast.success('Welcome to ZCAR!', {
+            setMessage('Account created successfully! Welcome to EagleList.');
+            toast.success('Welcome to EagleList!', {
               description: 'Your account has been created successfully.',
             });
           } else {
@@ -123,12 +124,16 @@ function AuthSuccessContent() {
         <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800 p-8 text-center">
           {/* Logo */}
           <div className="mb-6">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-amber-500 to-orange-600 text-white text-2xl font-bold mb-4">
-              Z
+            <div className="flex justify-center">
+              <Image
+                src="/eaglelist.png"
+                alt="EagleList"
+                width={200}
+                height={84}
+                className="h-10 w-auto max-w-[180px] object-contain"
+                priority
+              />
             </div>
-            <h1 className="text-xl font-semibold text-neutral-900 dark:text-white">
-              ZCAR Marketplace
-            </h1>
           </div>
 
           {/* Status Icon */}

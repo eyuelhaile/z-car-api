@@ -1,4 +1,4 @@
-# ZCAR Marketplace API Documentation
+# EagleList API documentation
 
 **Version:** 1.0.0  
 **Base URL:** `http://localhost:3001/api/v1`  
@@ -43,7 +43,7 @@
 
 ## Overview
 
-ZCAR Marketplace is a dual-category platform for **Vehicles** and **Properties** in Ethiopia. The API supports:
+EagleList is a dual-category platform for **Vehicles** and **Properties** in Ethiopia. The API supports:
 
 - ✅ User registration and authentication (email/phone)
 - ✅ Listing creation and management (vehicles & properties)

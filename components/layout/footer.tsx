@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Car, Facebook, Twitter, Instagram, Youtube, Mail, Phone, MapPin } from 'lucide-react';
+import { Facebook, Twitter, Instagram, Youtube, Mail, Phone, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
@@ -74,12 +74,10 @@ export function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-6 gap-8">
           {/* Brand */}
           <div className="col-span-2">
-            <Link href="/" className="flex items-center gap-2 mb-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-amber-500 to-orange-600">
-                <Car className="h-6 w-6 text-white" />
-              </div>
-              <span className="font-bold text-2xl text-white">
-                <span className="text-amber-500">Z</span>CAR
+            <Link href="/" className="mb-4 inline-flex items-center">
+              <span className="font-bold text-2xl tracking-tight text-white">
+                <span className="text-slate-400">Eagle</span>
+                <span>List</span>
               </span>
             </Link>
             <p className="text-slate-400 mb-6 max-w-xs">
@@ -173,7 +171,7 @@ export function Footer() {
         <div className="container py-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-sm text-slate-400">
-              © {new Date().getFullYear()} ZCAR Marketplace. All rights reserved.
+              © {new Date().getFullYear()} EagleList. All rights reserved.
             </p>
             <div className="flex items-center gap-4">
               {socialLinks.map((link) => (

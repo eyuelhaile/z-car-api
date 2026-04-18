@@ -160,7 +160,7 @@ export function useAuth() {
         setAuth(response.data.user, response.data.token);
         
         if (response.data.isNewUser) {
-          toast.success('Welcome to ZCAR!', {
+          toast.success('Welcome to EagleList!', {
             description: 'Your account has been created successfully.',
           });
         } else {

@@ -510,7 +510,7 @@ export default function HomePage() {
       <section className="py-20 bg-muted/50">
         <div className="container">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold">Why Choose ZCAR?</h2>
+            <h2 className="text-3xl font-bold">Why Choose EagleList?</h2>
             <p className="text-muted-foreground mt-2">The trusted marketplace for Ethiopians</p>
           </div>
 
@@ -533,11 +533,11 @@ export default function HomePage() {
                 <Smartphone className="h-8 w-8 text-white" />
               </div>
               <h3 className="text-2xl font-bold mb-2">Download Our Mobile App</h3>
-              <p className="text-muted-foreground">Get the ZCAR app for a better experience on the go</p>
+              <p className="text-muted-foreground">Get the EagleList app for a better experience on the go</p>
             </div>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <a
-                href="https://play.google.com/store/apps/details?id=com.zcar.app"
+                href="https://play.google.com/store/apps/details?id=com.eaglelist.app"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-3 px-6 py-3 bg-black text-white rounded-xl hover:bg-gray-900 transition-colors shadow-lg hover:shadow-xl"
@@ -551,7 +551,7 @@ export default function HomePage() {
                 </div>
               </a>
               <a
-                href="https://apps.apple.com/app/zcar/id123456789"
+                href="https://apps.apple.com/search?term=EagleList"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-3 px-6 py-3 bg-black text-white rounded-xl hover:bg-gray-900 transition-colors shadow-lg hover:shadow-xl"

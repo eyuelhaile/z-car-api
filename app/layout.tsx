@@ -11,32 +11,32 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   title: {
-    default: 'ZCAR - Ethiopia\'s Premier Vehicle & Property Marketplace',
-    template: '%s | ZCAR Marketplace',
+    default: 'EagleList - Ethiopia\'s Premier Vehicle & Property Marketplace',
+    template: '%s | EagleList',
   },
-  description: 'Find your perfect vehicle or property in Ethiopia. Browse thousands of listings for cars, SUVs, apartments, houses, and more on ZCAR Marketplace.',
+  description: 'Find your perfect vehicle or property in Ethiopia. Browse thousands of listings for cars, SUVs, apartments, houses, and more on EagleList.',
   keywords: ['cars', 'vehicles', 'properties', 'real estate', 'Ethiopia', 'Addis Ababa', 'marketplace', 'buy', 'sell'],
-  authors: [{ name: 'ZCAR' }],
-  creator: 'ZCAR',
+  authors: [{ name: 'EagleList' }],
+  creator: 'EagleList',
   openGraph: {
     type: 'website',
     locale: 'en_US',
     url: 'https://zcar.et',
-    siteName: 'ZCAR Marketplace',
-    title: 'ZCAR - Ethiopia\'s Premier Vehicle & Property Marketplace',
-    description: 'Find your perfect vehicle or property in Ethiopia. Browse thousands of listings on ZCAR Marketplace.',
+    siteName: 'EagleList',
+    title: 'EagleList - Ethiopia\'s Premier Vehicle & Property Marketplace',
+    description: 'Find your perfect vehicle or property in Ethiopia. Browse thousands of listings on EagleList.',
     images: [
       {
         url: '/og-image.jpg',
         width: 1200,
         height: 630,
-        alt: 'ZCAR Marketplace',
+        alt: 'EagleList',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'ZCAR Marketplace',
+    title: 'EagleList',
     description: 'Ethiopia\'s Premier Vehicle & Property Marketplace',
     images: ['/og-image.jpg'],
   },

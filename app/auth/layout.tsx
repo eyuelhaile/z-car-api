@@ -1,5 +1,5 @@
+import Image from 'next/image';
 import Link from 'next/link';
-import { Car } from 'lucide-react';
 
 export default function AuthLayout({
   children,
@@ -22,13 +22,15 @@ export default function AuthLayout({
         <div className="absolute bottom-20 right-10 w-96 h-96 bg-orange-500/20 rounded-full blur-3xl" />
 
         <div className="relative z-10 flex flex-col justify-center items-center p-12 text-white">
-          <Link href="/" className="flex items-center gap-3 mb-12">
-            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm">
-              <Car className="h-8 w-8 text-amber-400" />
-            </div>
-            <span className="font-bold text-4xl">
-              <span className="text-amber-400">Z</span>CAR
-            </span>
+          <Link href="/" className="mb-12 flex justify-center">
+            <Image
+              src="/eaglelist.png"
+              alt="EagleList"
+              width={240}
+              height={100}
+              className="h-12 w-auto max-w-[220px] object-contain drop-shadow-md"
+              priority
+            />
           </Link>
 
           <div className="max-w-md text-center">
@@ -57,14 +59,16 @@ export default function AuthLayout({
       <div className="flex-1 flex items-center justify-center p-8 bg-background">
         <div className="w-full max-w-md">
           {/* Mobile Logo */}
-          <div className="lg:hidden text-center mb-8">
-            <Link href="/" className="inline-flex items-center gap-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-amber-500 to-orange-600">
-                <Car className="h-6 w-6 text-white" />
-              </div>
-              <span className="font-bold text-2xl">
-                <span className="text-amber-600">Z</span>CAR
-              </span>
+          <div className="lg:hidden mb-8 flex justify-center">
+            <Link href="/" className="inline-flex">
+              <Image
+                src="/eaglelist.png"
+                alt="EagleList"
+                width={240}
+                height={100}
+                className="h-9 w-auto max-w-[200px] object-contain"
+                priority
+              />
             </Link>
           </div>
           
