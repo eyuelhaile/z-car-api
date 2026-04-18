@@ -118,10 +118,9 @@ export function useCreateListing() {
   return useMutation({
     mutationFn: async (data: CreateListingRequest | Partial<Listing>) => {
       const response = await api.createListing(data);
-      const listing = response.data as Record<string, unknown>;
-      return listing;
+      return response.data;
     },
-    onSuccess: (data: any) => {
+    onSuccess: (data) => {
       // Invalidate all listing queries to refresh data
       queryClient.invalidateQueries({ queryKey: listingKeys.all });
       // Specifically invalidate my listings to refresh dashboard
