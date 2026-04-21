@@ -54,14 +54,12 @@ function AuthSuccessContent() {
           return;
         }
 
-        // Set the token in API client and localStorage
-        api.setToken(token);
-        console.log('Token set in API client');
-
-        // Store refresh token if provided
-        if (refreshToken && typeof window !== 'undefined') {
-          localStorage.setItem('zcar_refresh_token', refreshToken);
+        if (refreshToken) {
+          api.setAuthTokens(token, refreshToken);
+        } else {
+          api.setToken(token);
         }
+        console.log('Token set in API client');
 
         // Fetch user profile with the new token
         console.log('Fetching user profile...');

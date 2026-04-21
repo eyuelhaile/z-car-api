@@ -144,8 +144,11 @@ export default function VerifyOtpPage() {
         sessionStorage.removeItem('otp_phone');
         sessionStorage.removeItem('otp_expires');
         
-        // Set auth token and user
-        api.setToken(response.data.token);
+        if (response.data.refreshToken) {
+          api.setAuthTokens(response.data.token, response.data.refreshToken);
+        } else {
+          api.setToken(response.data.token);
+        }
         setAuth(response.data.user, response.data.token);
         
         toast.success('Phone verified!', {

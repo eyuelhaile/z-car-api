@@ -65,7 +65,13 @@ function AuthInitializer({ children }: { children: React.ReactNode }) {
     // Only run initialization once per session (unless token changes from null to something)
     const initAuth = async () => {
       if (token) {
-        api.setToken(token);
+        const rt =
+          typeof window !== 'undefined' ? localStorage.getItem('zcar_refresh_token') : null;
+        if (rt) {
+          api.setAuthTokens(token, rt);
+        } else {
+          api.setToken(token);
+        }
         
         // If we already have a user, don't re-fetch unless the token changed
         if (hasInitialized.current) {

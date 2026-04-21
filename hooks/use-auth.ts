@@ -31,7 +31,11 @@ export function useAuth() {
     mutationFn: (credentials: LoginCredentials) => api.login(credentials),
     onSuccess: (response) => {
       if (response.success) {
-        api.setToken(response.data.token);
+        if (response.data.refreshToken) {
+          api.setAuthTokens(response.data.token, response.data.refreshToken);
+        } else {
+          api.setToken(response.data.token);
+        }
         setAuth(response.data.user, response.data.token);
         toast.success('Welcome back!', {
           description: `Logged in as ${response.data.user.name}`,
@@ -73,7 +77,11 @@ export function useAuth() {
     mutationFn: ({ phone, otp }: { phone: string; otp: string }) => api.verifyLoginOtp(phone, otp),
     onSuccess: (response) => {
       if (response.success) {
-        api.setToken(response.data.token);
+        if (response.data.refreshToken) {
+          api.setAuthTokens(response.data.token, response.data.refreshToken);
+        } else {
+          api.setToken(response.data.token);
+        }
         setAuth(response.data.user, response.data.token);
         toast.success('Welcome back!', {
           description: `Logged in as ${response.data.user.name}`,
@@ -156,7 +164,11 @@ export function useAuth() {
     }) => api.socialLoginWithToken(provider, idToken, accessToken),
     onSuccess: (response) => {
       if (response.success) {
-        api.setToken(response.data.token);
+        if (response.data.refreshToken) {
+          api.setAuthTokens(response.data.token, response.data.refreshToken);
+        } else {
+          api.setToken(response.data.token);
+        }
         setAuth(response.data.user, response.data.token);
         
         if (response.data.isNewUser) {

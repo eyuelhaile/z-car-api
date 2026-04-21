@@ -432,6 +432,7 @@ export interface YearRange {
 export interface AuthResponse {
   user: User;
   token: string;
+  refreshToken: string;
   expiresAt: string;
 }
 

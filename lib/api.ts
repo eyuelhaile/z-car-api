@@ -1,4 +1,4 @@
-import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from 'axios';
+import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
 import {
   ApiResponse,
   PaginatedResponse,
@@ -53,16 +53,50 @@ import {
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/api/v1';
 
+const REFRESH_STORAGE_KEY = 'zcar_refresh_token';
+
+type AuthRefreshPayload = {
+  user: User;
+  token: string;
+  refreshToken: string;
+  expiresAt: string;
+};
+
+function authPathSkipsRefresh(url: string): boolean {
+  const u = url || '';
+  return (
+    u.includes('/auth/login') ||
+    u.includes('/auth/register') ||
+    u.includes('/auth/verify-otp') ||
+    u.includes('/auth/resend-otp') ||
+    u.includes('/auth/send-login-otp') ||
+    u.includes('/auth/verify-login-otp') ||
+    u.includes('/auth/send-phone-otp') ||
+    u.includes('/auth/refresh') ||
+    u.includes('/auth/social')
+  );
+}
+
 class ApiClient {
   private client: AxiosInstance;
+  /** Plain axios for refresh — avoids interceptor recursion. */
+  private refreshClient: AxiosInstance;
   private token: string | null = null;
+  private refreshToken: string | null = null;
+  private refreshPromise: Promise<boolean> | null = null;
 
   constructor() {
     this.client = axios.create({
       baseURL: API_BASE_URL,
+      timeout: 60000,
       headers: {
         'Content-Type': 'application/json',
       },
+    });
+    this.refreshClient = axios.create({
+      baseURL: API_BASE_URL,
+      timeout: 25000,
+      headers: { 'Content-Type': 'application/json' },
     });
 
     // Request interceptor to add auth token
@@ -73,39 +107,56 @@ class ApiClient {
       return config;
     });
 
-    // Response interceptor for error handling
+    // Response: on 401, rotate access token via refresh token once, then retry
     this.client.interceptors.response.use(
       (response) => response,
-      (error: AxiosError) => {
-        if (error.response?.status === 401) {
-          // Don't auto-redirect on auth callback pages or if the failing request is an auth request
+      async (error: AxiosError) => {
+        const status = error.response?.status;
+        const cfg = error.config as (InternalAxiosRequestConfig & { _authRetry?: boolean }) | undefined;
+
+        if (status === 401 && cfg && !cfg._authRetry) {
+          const requestUrl = cfg.url || '';
           const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
-          const isAuthCallback = currentPath.includes('/auth/success') || currentPath.includes('/oauth/callback');
+          const isAuthCallback =
+            currentPath.includes('/auth/success') || currentPath.includes('/oauth/callback');
 
-          const requestUrl = (error.config && (error.config.url as string)) || '';
-          const isAuthRequest =
-            requestUrl.includes('/auth/login') ||
-            requestUrl.includes('/auth/verify-otp') ||
-            requestUrl.includes('/auth/login-otp') ||
-            requestUrl.includes('/auth/send-phone-otp') ||
-            requestUrl.includes('/auth/register') ||
-            requestUrl.includes('/auth/social');
+          if (!authPathSkipsRefresh(requestUrl) && !isAuthCallback && this.getRefreshToken()) {
+            cfg._authRetry = true;
+            const rotated = await this.tryRefreshAccessToken();
+            if (rotated && this.token) {
+              cfg.headers = cfg.headers || {};
+              cfg.headers.Authorization = `Bearer ${this.token}`;
+              return this.client.request(cfg);
+            }
+          }
 
-          if (!isAuthCallback && !isAuthRequest) {
+          if (!authPathSkipsRefresh(requestUrl) && !isAuthCallback) {
             this.clearToken();
             if (typeof window !== 'undefined') {
               window.location.href = '/auth/login';
             }
           }
-          // For auth requests, just reject the error so the caller can handle it
         }
         return Promise.reject(error);
       }
     );
 
-    // Initialize token from localStorage
     if (typeof window !== 'undefined') {
       this.token = localStorage.getItem('zcar_token');
+      this.refreshToken = localStorage.getItem(REFRESH_STORAGE_KEY);
+    }
+  }
+
+  /** Store access + refresh (login / refresh / OTP). */
+  setAuthTokens(accessToken: string, refresh: string) {
+    this.token = accessToken;
+    this.refreshToken = refresh;
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('zcar_token', accessToken);
+      localStorage.setItem(REFRESH_STORAGE_KEY, refresh);
+      void import('@/lib/store').then(({ useAuthStore }) => {
+        useAuthStore.getState().setToken(accessToken);
+      });
     }
   }
 
@@ -118,14 +169,47 @@ class ApiClient {
 
   clearToken() {
     this.token = null;
+    this.refreshToken = null;
     if (typeof window !== 'undefined') {
       localStorage.removeItem('zcar_token');
+      localStorage.removeItem(REFRESH_STORAGE_KEY);
       localStorage.removeItem('zcar_user');
     }
   }
 
   getToken() {
     return this.token;
+  }
+
+  getRefreshToken() {
+    return this.refreshToken;
+  }
+
+  private async tryRefreshAccessToken(): Promise<boolean> {
+    if (this.refreshPromise) {
+      return this.refreshPromise;
+    }
+    this.refreshPromise = (async () => {
+      const rt =
+        this.refreshToken ||
+        (typeof window !== 'undefined' ? localStorage.getItem(REFRESH_STORAGE_KEY) : null);
+      if (!rt) return false;
+      try {
+        const { data } = await this.refreshClient.post<ApiResponse<AuthRefreshPayload>>('/auth/refresh', {
+          refreshToken: rt,
+        });
+        if (data?.success && data.data?.token && data.data?.refreshToken) {
+          this.setAuthTokens(data.data.token, data.data.refreshToken);
+          return true;
+        }
+      } catch {
+        /* invalid / expired refresh */
+      }
+      return false;
+    })();
+    const out = await this.refreshPromise;
+    this.refreshPromise = null;
+    return out;
   }
 
   // ============================================
