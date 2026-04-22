@@ -24,7 +24,7 @@ export default function AuthLayout({
         <div className="relative z-10 flex flex-col justify-center items-center p-12 text-white">
           <Link href="/" className="mb-12 flex justify-center">
             <Image
-              src="/eagle.png?v=2"
+              src="/eagle.png"
               alt="EagleList"
               width={240}
               height={100}
@@ -62,7 +62,7 @@ export default function AuthLayout({
           <div className="lg:hidden mb-8 flex justify-center">
             <Link href="/" className="inline-flex">
               <Image
-                src="/eagle.png?v=2"
+                src="/eagle.png"
                 alt="EagleList"
                 width={240}
                 height={100}

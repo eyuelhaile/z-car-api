@@ -117,7 +117,7 @@ export function Header() {
         <div className="container flex h-16 items-center justify-between gap-2">
           <Link href="/" className="flex h-14 shrink-0 items-center">
             <Image
-              src="/eagle.png?v=2"
+              src="/eagle.png"
               alt="EagleList logo"
               width={816}
               height={302}

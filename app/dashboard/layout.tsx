@@ -228,7 +228,7 @@ export default function DashboardLayout({
       <div className="p-6">
         <Link href="/" className="inline-flex h-12 items-center">
           <Image
-            src="/eagle.png?v=2"
+            src="/eagle.png"
             alt="EagleList logo"
             width={816}
             height={302}
