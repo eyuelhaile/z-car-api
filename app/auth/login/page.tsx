@@ -51,7 +51,7 @@ const OTP_LENGTH = 5;
 export default function LoginPage() {
   const { login, isLoggingIn, sendLoginOtp, verifyLoginOtp, isSendingOtp, isVerifyingOtp } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
-  const [socialLoading, setSocialLoading] = useState<'google' | 'facebook' | null>(null);
+  const [socialLoading, setSocialLoading] = useState<'google' | null>(null);
   const [loginMethod, setLoginMethod] = useState<'password' | 'otp'>('password');
   
   // OTP state
@@ -204,7 +204,7 @@ export default function LoginPage() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleSocialLogin = (provider: 'google' | 'facebook') => {
+  const handleSocialLogin = (provider: 'google') => {
     setSocialLoading(provider);
     const state = Math.random().toString(36).substring(7);
     if (typeof window !== 'undefined') {
@@ -501,7 +501,7 @@ export default function LoginPage() {
         </span>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4">
         <Button 
           variant="outline" 
           className="h-12 relative" 
@@ -532,24 +532,6 @@ export default function LoginPage() {
                 />
               </svg>
               Google
-            </>
-          )}
-        </Button>
-        <Button 
-          variant="outline" 
-          className="h-12" 
-          type="button"
-          onClick={() => handleSocialLogin('facebook')}
-          disabled={socialLoading !== null || isLoggingIn || isSendingOtp || isVerifyingOtp}
-        >
-          {socialLoading === 'facebook' ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
-          ) : (
-            <>
-              <svg className="mr-2 h-5 w-5" fill="#1877F2" viewBox="0 0 24 24">
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-              </svg>
-              Facebook
             </>
           )}
         </Button>

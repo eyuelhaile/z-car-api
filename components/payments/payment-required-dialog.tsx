@@ -2,7 +2,6 @@
 
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -10,7 +9,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { AlertCircle, Loader2 } from 'lucide-react';
 
 interface PaymentRequiredDialogProps {
   open: boolean;
@@ -19,6 +19,7 @@ interface PaymentRequiredDialogProps {
   amount: number;
   onPay: () => void;
   onCancel?: () => void;
+  isPaying?: boolean;
 }
 
 export function PaymentRequiredDialog({
@@ -28,6 +29,7 @@ export function PaymentRequiredDialog({
   amount,
   onPay,
   onCancel,
+  isPaying = false,
 }: PaymentRequiredDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -52,12 +54,24 @@ export function PaymentRequiredDialog({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onCancel}>
+          <AlertDialogCancel onClick={onCancel} disabled={isPaying}>
             Cancel
           </AlertDialogCancel>
-          <AlertDialogAction onClick={onPay} className="bg-amber-600 hover:bg-amber-700">
-            Pay with Chapa
-          </AlertDialogAction>
+          <Button
+            type="button"
+            onClick={onPay}
+            disabled={isPaying}
+            className="bg-amber-600 hover:bg-amber-700"
+          >
+            {isPaying ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Redirecting to Chapa...
+              </>
+            ) : (
+              'Pay with Chapa'
+            )}
+          </Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

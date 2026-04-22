@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   Car,
@@ -160,6 +161,11 @@ const adminNavigation: NavItem[] = [
     href: '/dashboard/admin/analytics',
     icon: BarChart3,
   },
+  {
+    name: 'Subscriptions',
+    href: '/dashboard/admin/subscription-plans',
+    icon: CreditCard,
+  },
 ];
 
 export default function DashboardLayout({
@@ -220,13 +226,16 @@ export default function DashboardLayout({
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="p-6">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-amber-500 to-orange-600">
-            <Car className="h-5 w-5 text-white" />
-          </div>
-          <span className="font-bold text-xl">
-            <span className="text-amber-600">Z</span>CAR
-          </span>
+        <Link href="/" className="inline-flex h-12 items-center">
+          <Image
+            src="/eagle.png?v=2"
+            alt="EagleList logo"
+            width={816}
+            height={302}
+            sizes="(max-width: 1024px) 240px, 300px"
+            className="h-11 w-auto max-w-none object-contain object-left sm:h-12"
+            priority
+          />
         </Link>
       </div>
 

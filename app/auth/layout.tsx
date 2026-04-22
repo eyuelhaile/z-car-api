@@ -24,11 +24,11 @@ export default function AuthLayout({
         <div className="relative z-10 flex flex-col justify-center items-center p-12 text-white">
           <Link href="/" className="mb-12 flex justify-center">
             <Image
-              src="/eaglelist.png"
+              src="/eagle.png?v=2"
               alt="EagleList"
               width={240}
               height={100}
-              className="h-12 w-auto max-w-[220px] object-contain drop-shadow-md"
+              className="h-14 w-auto max-w-[280px] object-contain drop-shadow-md"
               priority
             />
           </Link>
@@ -62,11 +62,11 @@ export default function AuthLayout({
           <div className="lg:hidden mb-8 flex justify-center">
             <Link href="/" className="inline-flex">
               <Image
-                src="/eaglelist.png"
+                src="/eagle.png?v=2"
                 alt="EagleList"
                 width={240}
                 height={100}
-                className="h-9 w-auto max-w-[200px] object-contain"
+                className="h-11 w-auto max-w-[240px] object-contain"
                 priority
               />
             </Link>

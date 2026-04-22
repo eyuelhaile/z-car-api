@@ -367,8 +367,12 @@ export default function SubscriptionPage() {
             const isCurrentPlan = subscription?.plan === plan.plan;
             const isPopular = plan.plan === 'standard';
             const price = billingPeriod === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice;
-            const displayName = plan.plan.charAt(0).toUpperCase() + plan.plan.slice(1);
+            const displayName =
+              plan.displayName ||
+              plan.plan.charAt(0).toUpperCase() + plan.plan.slice(1);
             const limits = plan.limits || {};
+            const overage =
+              typeof plan.listingOveragePrice === 'number' ? plan.listingOveragePrice : 0;
 
             // Convert limits to features list
             const features = [
@@ -378,6 +382,9 @@ export default function SubscriptionPage() {
               limits.videoLimit > 0 && `${limits.videoLimit} video${limits.videoLimit !== 1 ? 's' : ''} per listing`,
               limits.analyticsAccess && 'Analytics access',
               limits.premiumSupport && 'Premium support',
+              overage > 0 &&
+                limits.maxListings !== -1 &&
+                `Pay as you go: ${formatPrice(overage)} per extra listing`,
             ].filter(Boolean);
 
             return (

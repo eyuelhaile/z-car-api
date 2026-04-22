@@ -20,6 +20,9 @@ import {
   Appointment,
   Notification,
   SubscriptionPlanDetails,
+  AdminSubscriptionPlanSetting,
+  AdminSubscriptionPlanUpdatePayload,
+  SubscriptionPlan,
   UserSubscription,
   PaymentInitiation,
   Payment,
@@ -321,7 +324,7 @@ class ApiClient {
     return response.data;
   }
 
-  getSocialLoginUrl(provider: 'google' | 'facebook' | 'apple', state?: string): string {
+  getSocialLoginUrl(provider: 'google', state?: string): string {
     const baseUrl = API_BASE_URL.replace('/api/v1', '');
     const authUrl = `${baseUrl}/api/v1/auth/${provider}`;
     if (state) {
@@ -1165,6 +1168,19 @@ class ApiClient {
     phoneVerifiedAt?: string;
   }): Promise<ApiResponse<User>> {
     const response = await this.client.put(`/admin/users/${id}`, data);
+    return response.data;
+  }
+
+  async getAdminSubscriptionPlans(): Promise<ApiResponse<AdminSubscriptionPlanSetting[]>> {
+    const response = await this.client.get('/admin/subscription-plans');
+    return response.data;
+  }
+
+  async updateAdminSubscriptionPlan(
+    planName: SubscriptionPlan,
+    data: AdminSubscriptionPlanUpdatePayload
+  ): Promise<ApiResponse<AdminSubscriptionPlanSetting>> {
+    const response = await this.client.put(`/admin/subscription-plans/${planName}`, data);
     return response.data;
   }
 

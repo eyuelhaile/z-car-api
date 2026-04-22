@@ -134,6 +134,7 @@ function CreateListingPageContent({ initialData, listingId }: CreateListingPageP
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [pendingPaymentListingId, setPendingPaymentListingId] = useState<string | null>(null);
   const [pendingPaymentAmountEtb, setPendingPaymentAmountEtb] = useState<number | null>(null);
+  const [isRedirectingToChapa, setIsRedirectingToChapa] = useState(false);
 
   // Fetch form data from API
   const { data: vehicleFormData, isLoading: isLoadingVehicleForm } = useVehicleFormData();
@@ -246,9 +247,11 @@ function CreateListingPageContent({ initialData, listingId }: CreateListingPageP
 
   // Handle payment button click
   const handlePayWithChapa = async () => {
-    if (!pendingPaymentListingId) return;
+    if (!pendingPaymentListingId || isRedirectingToChapa) return;
 
     try {
+      setIsRedirectingToChapa(true);
+
       // Store listingId in sessionStorage so success page can access it
       if (typeof window !== 'undefined') {
         sessionStorage.setItem('chapa_listing_id', pendingPaymentListingId);
@@ -260,6 +263,7 @@ function CreateListingPageContent({ initialData, listingId }: CreateListingPageP
         toast.error('Missing payment amount', {
           description: 'Please try creating the listing again.',
         });
+        setIsRedirectingToChapa(false);
         return;
       }
       const result = await initializeChapaPaymentMutation.mutateAsync({
@@ -284,11 +288,17 @@ function CreateListingPageContent({ initialData, listingId }: CreateListingPageP
       // Chapa will redirect back to returnUrl after payment
       // The callback URL will handle verification and update listing status
       if (result.checkout_url) {
-        window.location.href = result.checkout_url;
+        window.location.assign(result.checkout_url);
+        return;
       }
+      setIsRedirectingToChapa(false);
+      toast.error('Unable to start checkout', {
+        description: 'Chapa checkout URL was not returned. Please try again.',
+      });
     } catch (error) {
       // Error is already handled by the mutation
       console.error('Failed to initialize payment:', error);
+      setIsRedirectingToChapa(false);
     }
   };
 
@@ -1949,11 +1959,16 @@ function CreateListingPageContent({ initialData, listingId }: CreateListingPageP
       {pendingPaymentListingId && pendingPaymentAmountEtb != null && (
         <PaymentRequiredDialog
           open={paymentDialogOpen}
-          onOpenChange={setPaymentDialogOpen}
+          onOpenChange={(open) => {
+            if (isRedirectingToChapa) return;
+            setPaymentDialogOpen(open);
+          }}
           listingId={pendingPaymentListingId}
           amount={pendingPaymentAmountEtb}
           onPay={handlePayWithChapa}
+          isPaying={isRedirectingToChapa || initializeChapaPaymentMutation.isPending}
           onCancel={() => {
+            if (isRedirectingToChapa) return;
             setPaymentDialogOpen(false);
             // Optionally redirect to listings page or keep dialog open
           }}

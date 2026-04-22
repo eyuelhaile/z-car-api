@@ -6,7 +6,7 @@
 export type UserRole = 'admin' | 'buyer' | 'private' | 'broker' | 'dealership';
 export type SellerRole = 'private' | 'broker' | 'dealership';
 export type SubscriptionPlan = 'basic' | 'standard' | 'premium';
-export type SocialLoginProvider = 'google' | 'facebook' | 'apple';
+export type SocialLoginProvider = 'google';
 
 export interface User {
   id: string;
@@ -621,6 +621,8 @@ export interface SubscriptionPlanDetails {
   monthlyPrice: number;
   yearlyPrice: number;
   yearlyDiscount: number;
+  /** Pay-as-you-go fee (ETB) when listing count exceeds plan quota */
+  listingOveragePrice?: number;
   limits: {
     maxListings: number;
     featuredListings: number;
@@ -639,6 +641,45 @@ export interface SubscriptionPlanDetails {
   period?: string;
   features?: string[];
 }
+
+/** Admin-managed row from `subscription_plan_settings` */
+export interface AdminSubscriptionPlanSetting {
+  id: string;
+  planName: SubscriptionPlan;
+  displayName: string;
+  monthlyPrice: number;
+  yearlyPrice: number;
+  yearlyDiscount: number;
+  maxListings: number;
+  featuredListings: number;
+  photoLimit: number;
+  videoLimit: number;
+  analyticsAccess: boolean;
+  premiumSupport: boolean;
+  listingOveragePrice: number;
+  sortOrder: number;
+  isActive: boolean;
+  limits: SubscriptionFeatures;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type AdminSubscriptionPlanUpdatePayload = Pick<
+  AdminSubscriptionPlanSetting,
+  | 'displayName'
+  | 'monthlyPrice'
+  | 'yearlyPrice'
+  | 'yearlyDiscount'
+  | 'maxListings'
+  | 'featuredListings'
+  | 'photoLimit'
+  | 'videoLimit'
+  | 'analyticsAccess'
+  | 'premiumSupport'
+  | 'listingOveragePrice'
+  | 'sortOrder'
+  | 'isActive'
+>;
 
 export interface UserSubscription {
   id?: string;

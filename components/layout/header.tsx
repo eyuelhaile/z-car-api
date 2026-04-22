@@ -114,14 +114,15 @@ export function Header() {
       )}
 
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between">
-          <Link href="/" className="flex h-9 shrink-0 items-center">
+        <div className="container flex h-16 items-center justify-between gap-2">
+          <Link href="/" className="flex h-14 shrink-0 items-center">
             <Image
-              src="/eaglelist.png"
+              src="/eagle.png?v=2"
               alt="EagleList logo"
-              width={240}
-              height={100}
-              className="h-9 w-auto max-w-[200px] object-contain object-left"
+              width={816}
+              height={302}
+              sizes="(max-width: 640px) 240px, (max-width: 1024px) 290px, 320px"
+              className="h-11 w-auto max-w-none object-contain object-left sm:h-12 lg:h-[3.25rem]"
               priority
             />
           </Link>

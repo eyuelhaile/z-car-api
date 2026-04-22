@@ -124,11 +124,11 @@ function AuthSuccessContent() {
           <div className="mb-6">
             <div className="flex justify-center">
               <Image
-                src="/eaglelist.png"
+                src="/eagle.png?v=2"
                 alt="EagleList"
-                width={200}
-                height={84}
-                className="h-10 w-auto max-w-[180px] object-contain"
+                width={240}
+                height={100}
+                className="h-12 w-auto max-w-[230px] object-contain"
                 priority
               />
             </div>

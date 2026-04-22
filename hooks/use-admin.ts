@@ -2,7 +2,8 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { User, Listing } from '@/types';
+import { dashboardKeys } from './use-dashboard';
+import { User, Listing, AdminSubscriptionPlanSetting, AdminSubscriptionPlanUpdatePayload, SubscriptionPlan } from '@/types';
 import { toast } from 'sonner';
 import { getApiErrorMessage } from '@/lib/error-utils';
 
@@ -30,6 +31,7 @@ export const adminKeys = {
       ? ([...adminKeys.all, 'reports', filters] as const)
       : ([...adminKeys.all, 'reports'] as const),
   analytics: () => [...adminKeys.all, 'analytics'] as const,
+  subscriptionPlans: () => [...adminKeys.all, 'subscription-plans'] as const,
 };
 
 // ============================================
@@ -441,6 +443,47 @@ export function useAdminAnalytics() {
       return response.data;
     },
     staleTime: 1000 * 60 * 5, // 5 minutes (matches API cache)
+  });
+}
+
+// ============================================
+// Admin Subscription Plan Settings
+// ============================================
+export function useAdminSubscriptionPlans() {
+  return useQuery({
+    queryKey: adminKeys.subscriptionPlans(),
+    queryFn: async (): Promise<AdminSubscriptionPlanSetting[]> => {
+      const response = await api.getAdminSubscriptionPlans();
+      return response.data || [];
+    },
+    staleTime: 1000 * 60,
+  });
+}
+
+export function useUpdateAdminSubscriptionPlan() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      planName,
+      data,
+    }: {
+      planName: SubscriptionPlan;
+      data: AdminSubscriptionPlanUpdatePayload;
+    }) => {
+      const response = await api.updateAdminSubscriptionPlan(planName, data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.subscriptionPlans() });
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.subscriptionPlans() });
+      toast.success('Subscription plan saved');
+    },
+    onError: (error) => {
+      toast.error('Failed to save plan', {
+        description: getApiErrorMessage(error, 'Please try again.'),
+      });
+    },
   });
 }
 
